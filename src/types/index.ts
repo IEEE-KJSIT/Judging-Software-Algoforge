@@ -1,40 +1,35 @@
-export interface Project {
+export interface Team {
   id: string;
   teamName: string;
-  members: string[];
-  title: string;
-  description: string;
-  repoUrl?: string;
-  demoUrl?: string;
-  presentationUrl?: string;
+  status: 'pending' | 'active' | 'done' | 'absent';
+  order: number;
 }
 
-export interface Judge {
-  id: string;
-  name: string;
+export interface AppUser {
+  uid: string;
   email: string;
-  assignedProjects: string[];
+  name: string;
+  role: 'admin' | 'judge';
+}
+
+export interface Rating {
+  id: string;
+  teamId: string;
+  criterionId: string;
+  judgeEmail: string;
+  score: number;
+  timestamp: unknown;
+}
+
+export interface Session {
+  activeTeamId: string | null;
+  activatedAt: unknown;
 }
 
 export interface Criterion {
   id: string;
   name: string;
+  shortName: string;
   description: string;
   maxScore: number;
-}
-
-export interface Score {
-  projectId: string;
-  judgeId: string;
-  criterionId: string;
-  score: number;
-  feedback: string;
-  timestamp: Date;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'judge' | 'participant';
 }
