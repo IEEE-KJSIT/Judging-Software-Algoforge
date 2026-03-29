@@ -41,10 +41,14 @@ export async function setActiveTeam(teamId: string, previousActiveId: string | n
   }
 
   ops.push(
-    setDoc(doc(db, 'session', 'current'), {
-      activeTeamId: teamId,
-      activatedAt: new Date(),
-    })
+    setDoc(
+      doc(db, 'session', 'current'),
+      {
+        activeTeamId: teamId,
+        activatedAt: new Date(),
+      },
+      { merge: true }
+    )
   );
 
   ops.push(updateDoc(doc(db, 'teams', teamId), { status: 'active' }));
@@ -54,10 +58,14 @@ export async function setActiveTeam(teamId: string, previousActiveId: string | n
 
 export async function deactivateTeam(teamId: string, newStatus: Team['status']) {
   await Promise.all([
-    setDoc(doc(db, 'session', 'current'), {
-      activeTeamId: null,
-      activatedAt: null,
-    }),
+    setDoc(
+      doc(db, 'session', 'current'),
+      {
+        activeTeamId: null,
+        activatedAt: null,
+      },
+      { merge: true }
+    ),
     updateDoc(doc(db, 'teams', teamId), { status: newStatus }),
   ]);
 }

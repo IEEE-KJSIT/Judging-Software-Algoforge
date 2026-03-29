@@ -37,7 +37,9 @@ You do **not** create the Firestore `users` collection yourself. Open the app, s
 2. Click **"Create database"**
 3. Choose **"Start in test mode"** → pick a region → **Enable**
 
-Once created, go to the **Rules** tab and paste in the contents of `firestore.rules` from this project.
+Once created, go to the **Rules** tab and paste in the **full** contents of `firestore.rules` from this project, then **Publish**.
+
+The rules allow **public read** on `teams`, `ratings`, and `session` so **`/live`** (public leaderboard for teams and projectors) works **without login**. User emails in `users` stay **private** (read only when signed in).
 
 ---
 

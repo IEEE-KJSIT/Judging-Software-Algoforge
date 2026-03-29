@@ -18,7 +18,8 @@ function ratingDocId(teamId: string, criterionId: string, judgeEmail: string): s
 export async function submitRatings(
   teamId: string,
   judgeEmail: string,
-  scores: Record<string, number>
+  scores: Record<string, number>,
+  note?: string
 ): Promise<void> {
   const ops = Object.entries(scores).map(([criterionId, score]) => {
     const ref = doc(db, 'ratings', ratingDocId(teamId, criterionId, judgeEmail));
@@ -27,6 +28,7 @@ export async function submitRatings(
       criterionId,
       judgeEmail,
       score,
+      note: note ?? '',
       timestamp: serverTimestamp(),
     });
   });

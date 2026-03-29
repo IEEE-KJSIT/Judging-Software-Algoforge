@@ -3,24 +3,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Only authenticated users can access anything
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Live leaderboard / projector: anyone can READ teams, ratings, session (no login).
+    // Writes still require sign-in (judges + admin).
+    match /teams/{teamId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
-{
-      allow read, write: if
-          request.time < timestamp.date(2026, 4, 24);
+
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
-    // Stricter rules you can enable later:
-    //
-    // match /ratings/{docId} {
-    //   allow read: if request.auth != null;
-    //   allow write: if request.auth != null && request.auth.token.email == resource.data.judgeEmail;
-    // }
-    //
-    // match /teams/{teamId} {
-    //   allow read: if request.auth != null;
-    //   allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    // }
+
+    match /session/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // User profiles — authenticated only (emails & roles not public)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
   }
 }

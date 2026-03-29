@@ -6,12 +6,14 @@ import { Login } from './pages/Login';
 import { Admin } from './pages/Admin';
 import { Judge } from './pages/Judge';
 import { Leaderboard } from './pages/Leaderboard';
+import { LiveLeaderboard } from './pages/LiveLeaderboard';
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/live" element={<LiveLeaderboard />} />
           <Route path="/" element={<Login />} />
           <Route
             path="/admin"

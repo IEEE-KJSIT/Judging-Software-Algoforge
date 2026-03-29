@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 
@@ -102,7 +102,15 @@ export function Login() {
           </form>
         </div>
 
-        <p className="text-center text-text-muted text-xs mt-6 font-body">
+        <p className="text-center mt-6">
+          <Link
+            to="/live"
+            className="text-primary text-sm font-display font-500 hover:underline"
+          >
+            Public display — results at closing (no login)
+          </Link>
+        </p>
+        <p className="text-center text-text-muted text-xs mt-3 font-body">
           IEEE-KJSIT · Hack-Judge v2
         </p>
       </div>

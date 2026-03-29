@@ -21,11 +21,15 @@ export interface Rating {
   judgeEmail: string;
   score: number;
   timestamp: unknown;
+  /** Optional per-team note written by this judge. Stored on all criterion docs for the same team. */
+  note?: string;
 }
 
 export interface Session {
   activeTeamId: string | null;
   activatedAt: unknown;
+  /** When true, /live and /leaderboard show scores. Default false for end-of-event reveal. */
+  leaderboardRevealed?: boolean;
 }
 
 export interface Criterion {

@@ -8,6 +8,7 @@ import { useRatings } from '../hooks/useRatings';
 import { useJudgePanel } from '../hooks/useJudgePanel';
 import { useAllJudges } from '../hooks/useAllJudges';
 import { seedTeams, setActiveTeam, deactivateTeam, setTeamStatus } from '../services/teamService';
+import { setLeaderboardRevealed } from '../services/sessionService';
 import { deleteRatingsForTeam } from '../services/ratingService';
 import { setJudgePanelActive } from '../services/userService';
 import { createJudgeAccount, deleteJudgeDoc } from '../services/judgeManagementService';
@@ -45,6 +46,7 @@ export function Admin() {
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
   const [creating, setCreating] = useState(false);
+  const [liveCopied, setLiveCopied] = useState(false);
 
   const activeTeam = useMemo(
     () => teams.find((t) => t.id === session.activeTeamId) ?? null,
@@ -147,6 +149,23 @@ export function Admin() {
     finally { setActionLoading(null); }
   }
 
+  async function handleToggleLeaderboardReveal() {
+    setActionLoading('reveal_lb');
+    try {
+      await setLeaderboardRevealed(!session.leaderboardRevealed);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  function copyPublicLiveUrl() {
+    const url = `${window.location.origin}/live`;
+    void navigator.clipboard.writeText(url).then(() => {
+      setLiveCopied(true);
+      setTimeout(() => setLiveCopied(false), 2000);
+    });
+  }
+
   if (teamsLoading) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
@@ -168,14 +187,31 @@ export function Admin() {
           </h1>
           <p className="text-text-muted text-2xs font-body mt-0.5">Admin Panel</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
+            onClick={copyPublicLiveUrl}
+            className="min-h-[36px] px-3 py-1.5 rounded-btn border border-primary/30 text-primary text-xs font-display font-500 hover:bg-primary/10 transition-colors"
+          >
+            {liveCopied ? 'Copied!' : 'Copy public /live URL'}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/live')}
+            className="min-h-[36px] px-3 py-1.5 rounded-btn border border-divider text-text-secondary text-xs font-display font-500 hover:bg-surface-raised hover:text-text-primary transition-colors"
+            title="Shows a waiting screen until you reveal results in Event tab"
+          >
+            Open public screen
+          </button>
+          <button
+            type="button"
             onClick={() => navigate('/leaderboard')}
             className="min-h-[36px] px-3 py-1.5 rounded-btn border border-divider text-text-secondary text-xs font-display font-500 hover:bg-surface-raised hover:text-text-primary transition-colors"
           >
             Leaderboard
           </button>
           <button
+            type="button"
             onClick={() => signOut(auth)}
             className="min-h-[36px] px-3 py-1.5 rounded-btn bg-danger/10 border border-danger/30 text-danger text-xs font-display font-500 hover:bg-danger/20 transition-colors"
           >
@@ -226,6 +262,39 @@ export function Admin() {
                   <div className="text-text-muted text-2xs font-display font-500 uppercase tracking-widest mt-1">{s.label}</div>
                 </div>
               ))}
+            </div>
+
+            {/* End-of-event: show leaderboard on /live + judges */}
+            <div className="bg-surface border border-divider rounded-card p-5 shadow-card">
+              <h2 className="font-display font-700 text-text-primary text-sm mb-1">Final leaderboard</h2>
+              <p className="text-text-muted text-2xs font-body mb-4 max-w-xl">
+                While off, <span className="text-text-secondary">/live</span> and judges only see a waiting message — no ranks or scores. Turn this on at closing to reveal results (and confetti when #1 changes).
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={isLoading('reveal_lb')}
+                  onClick={handleToggleLeaderboardReveal}
+                  className={`min-h-[40px] px-4 rounded-btn text-sm font-display font-500 transition-colors disabled:opacity-60 ${
+                    session.leaderboardRevealed
+                      ? 'bg-danger/10 border border-danger/30 text-danger hover:bg-danger/20'
+                      : 'bg-success/10 border border-success/25 text-success hover:bg-success/20'
+                  }`}
+                >
+                  {isLoading('reveal_lb')
+                    ? '…'
+                    : session.leaderboardRevealed
+                      ? 'Hide leaderboard again'
+                      : 'Reveal leaderboard'}
+                </button>
+                <span
+                  className={`text-xs font-display font-500 ${
+                    session.leaderboardRevealed ? 'text-success' : 'text-text-muted'
+                  }`}
+                >
+                  {session.leaderboardRevealed ? 'Visible on /live and for judges' : 'Hidden — end-of-event only'}
+                </span>
+              </div>
             </div>
 
             {/* Active Team */}
