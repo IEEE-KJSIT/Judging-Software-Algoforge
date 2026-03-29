@@ -26,6 +26,8 @@ export function Judge() {
 
   const activeTeam = teams.find((t) => t.id === session?.activeTeamId) ?? null;
 
+  const removedFromPanel = user?.role === 'judge' && user.panelActive === false;
+
   // When session changes, check status for the new active team
   useEffect(() => {
     if (sessionLoading) return;
@@ -68,6 +70,29 @@ export function Judge() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (removedFromPanel) {
+    return (
+      <div className="min-h-screen bg-bg flex flex-col">
+        <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-divider">
+          <span className="font-display font-700 text-text-primary text-base">AlgoForge &apos;26</span>
+          <button
+            type="button"
+            onClick={() => signOut(auth)}
+            className="min-h-[36px] px-3 py-1.5 rounded-btn bg-danger/10 border border-danger/30 text-danger text-xs font-display font-500"
+          >
+            Sign out
+          </button>
+        </header>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <p className="text-text-primary font-display font-500 text-md mb-2">Not on judging panel</p>
+          <p className="text-text-secondary text-sm font-body max-w-sm">
+            Your account was removed from the panel. If this is a mistake, contact the organiser.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (sessionLoading || screen === 'checking') {

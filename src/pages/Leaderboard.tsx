@@ -6,7 +6,7 @@ import { auth } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useTeams } from '../hooks/useTeams';
 import { useRatings } from '../hooks/useRatings';
-import { CRITERIA } from '../constants/criteria';
+import { CRITERIA, TIEBREAKER_ORDER } from '../constants/criteria';
 import type { Team, Rating } from '../types';
 
 interface TeamScore {
@@ -14,10 +14,18 @@ interface TeamScore {
   criteriaAvg: Record<string, number>;
   total: number;
   judgeCount: number;
+  /** True when this team has the same total as the team ranked directly above it */
+  tiedAbove: boolean;
+  /** Which criterion broke the tie (shown as tooltip/label) */
+  tiebreaker: string | null;
 }
 
+const TIEBREAKER_NAMES: Record<string, string> = Object.fromEntries(
+  CRITERIA.map((c) => [c.id, c.shortName])
+);
+
 function calcScores(teams: Team[], ratings: Rating[]): TeamScore[] {
-  return teams
+  const base = teams
     .filter((t) => t.status !== 'absent')
     .map((team) => {
       const teamRatings = ratings.filter((r) => r.teamId === team.id);
@@ -31,12 +39,38 @@ function calcScores(teams: Team[], ratings: Rating[]): TeamScore[] {
       });
 
       const total = Object.values(criteriaAvg).reduce((a, b) => a + b, 0);
-
       const uniqueJudges = new Set(teamRatings.map((r) => r.judgeEmail)).size;
 
-      return { team, criteriaAvg, total, judgeCount: uniqueJudges };
+      return { team, criteriaAvg, total, judgeCount: uniqueJudges, tiedAbove: false, tiebreaker: null };
     })
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      // Tiebreaker: Presentation → Innovation → Solution → Impact → Problem
+      for (const cid of TIEBREAKER_ORDER) {
+        const diff = (b.criteriaAvg[cid] ?? 0) - (a.criteriaAvg[cid] ?? 0);
+        if (diff !== 0) return diff;
+      }
+      return a.team.teamName.localeCompare(b.team.teamName, undefined, { sensitivity: 'base' });
+    });
+
+  // Annotate tied rows
+  for (let i = 1; i < base.length; i++) {
+    const prev = base[i - 1];
+    const curr = base[i];
+    if (Math.abs(curr.total - prev.total) < 0.001) {
+      curr.tiedAbove = true;
+      // Find which criterion actually broke the tie
+      let breaker: string | null = null;
+      for (const cid of TIEBREAKER_ORDER) {
+        const diff = (prev.criteriaAvg[cid] ?? 0) - (curr.criteriaAvg[cid] ?? 0);
+        if (Math.abs(diff) > 0.001) { breaker = TIEBREAKER_NAMES[cid] ?? null; break; }
+      }
+      curr.tiebreaker = breaker;
+      prev.tiedAbove = prev.tiedAbove; // keep existing
+    }
+  }
+
+  return base;
 }
 
 const RANK_STYLES: Record<number, string> = {
@@ -159,11 +193,23 @@ export function Leaderboard() {
                             <span className="font-mono text-sm font-600">{rank}</span>
                           </td>
                           <td className="px-4 py-4">
-                            <span className="font-display font-500 text-text-primary text-sm">{s.team.teamName}</span>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-display font-500 text-text-primary text-sm">{s.team.teamName}</span>
+                              {s.tiedAbove && (
+                                <span className="text-2xs font-body text-warning">
+                                  tied on total
+                                  {s.tiebreaker ? ` · won by ${s.tiebreaker}` : ' · still equal'}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           {CRITERIA.map((c) => (
                             <td key={c.id} className="px-3 py-4 text-center">
-                              <span className="font-mono text-sm text-text-secondary">
+                              <span className={`font-mono text-sm ${
+                                s.tiedAbove && s.tiebreaker === c.shortName
+                                  ? 'text-warning font-600'
+                                  : 'text-text-secondary'
+                              }`}>
                                 {s.criteriaAvg[c.id]?.toFixed(1) ?? '—'}
                               </span>
                             </td>
@@ -198,19 +244,32 @@ export function Leaderboard() {
                     transition={{ delay: idx * 0.05, duration: 0.3 }}
                     className={`bg-surface border border-divider border-l-4 ${rankStyle.split(' ')[0] ?? 'border-l-divider'} rounded-card p-4 shadow-card`}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <span className={`font-mono text-lg font-600 ${RANK_STYLES[rank]?.split(' ').pop() ?? 'text-text-muted'}`}>
                           #{rank}
                         </span>
-                        <span className="font-display font-500 text-text-primary text-base">{s.team.teamName}</span>
+                        <div>
+                          <span className="font-display font-500 text-text-primary text-base">{s.team.teamName}</span>
+                          {s.tiedAbove && (
+                            <p className="text-2xs font-body text-warning mt-0.5">
+                              tied · won by {s.tiebreaker ?? 'still equal'}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <span className="font-mono text-lg font-600 text-primary">{s.total.toFixed(1)}</span>
                     </div>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-5 gap-2 mt-3">
                       {CRITERIA.map((c) => (
                         <div key={c.id} className="text-center">
-                          <div className="font-mono text-sm text-text-secondary font-600">{s.criteriaAvg[c.id]?.toFixed(1) ?? '—'}</div>
+                          <div className={`font-mono text-sm font-600 ${
+                            s.tiedAbove && s.tiebreaker === c.shortName
+                              ? 'text-warning'
+                              : 'text-text-secondary'
+                          }`}>
+                            {s.criteriaAvg[c.id]?.toFixed(1) ?? '—'}
+                          </div>
                           <div className="text-2xs text-text-muted font-display uppercase tracking-wider mt-0.5">{c.shortName}</div>
                         </div>
                       ))}
@@ -221,7 +280,7 @@ export function Leaderboard() {
             </div>
 
             <p className="text-center text-text-muted text-2xs font-body mt-6 pb-2">
-              {scores.length} teams · scores update in real-time
+              {scores.length} teams · real-time · tiebreaker: Presentation → Innovation → Solution → Impact → Problem
             </p>
           </>
         )}

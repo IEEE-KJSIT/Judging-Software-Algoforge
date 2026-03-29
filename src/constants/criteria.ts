@@ -40,5 +40,8 @@ export const CRITERIA: Criterion[] = [
 
 export const MAX_TOTAL_SCORE = CRITERIA.reduce((sum, c) => sum + c.maxScore, 0);
 
-// Update this to match your actual number of judges
-export const TOTAL_JUDGES = 5;
+/**
+ * Tiebreaker priority — checked in order when totals are equal.
+ * Criterion IDs: '4' Presentation → '3' Innovation → '2' Solution → '5' Impact → '1' Problem
+ */
+export const TIEBREAKER_ORDER = ['4', '3', '2', '5', '1'] as const;

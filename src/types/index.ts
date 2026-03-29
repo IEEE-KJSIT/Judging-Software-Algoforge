@@ -10,6 +10,8 @@ export interface AppUser {
   email: string;
   name: string;
   role: 'admin' | 'judge';
+  /** If false, not counted on the judging panel (Auth deletion does not remove Firestore — use Remove from panel). */
+  panelActive?: boolean;
 }
 
 export interface Rating {

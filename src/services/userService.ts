@@ -14,6 +14,7 @@ export async function getOrCreateUser(uid: string, email: string): Promise<AppUs
     email,
     name: email.split('@')[0],
     role: 'judge',
+    panelActive: true,
   };
 
   await setDoc(ref, newUser);
@@ -27,4 +28,9 @@ export async function getAllUsers(): Promise<AppUser[]> {
 
 export async function updateUserRole(uid: string, role: AppUser['role']) {
   await updateDoc(doc(db, 'users', uid), { role });
+}
+
+/** Stops counting this account toward the panel (does not delete Auth). */
+export async function setJudgePanelActive(uid: string, panelActive: boolean) {
+  await updateDoc(doc(db, 'users', uid), { panelActive });
 }

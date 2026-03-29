@@ -1,6 +1,7 @@
 import {
   doc,
   setDoc,
+  deleteDoc,
   serverTimestamp,
   collection,
   query,
@@ -44,4 +45,11 @@ export async function hasJudgeSubmittedForTeam(
   );
   const snap = await getDocs(q);
   return !snap.empty;
+}
+
+/** Removes all score documents for a team (e.g. admin Reset). Leaderboard updates live. */
+export async function deleteRatingsForTeam(teamId: string): Promise<void> {
+  const q = query(collection(db, 'ratings'), where('teamId', '==', teamId));
+  const snap = await getDocs(q);
+  await Promise.all(snap.docs.map((d) => deleteDoc(doc(db, 'ratings', d.id))));
 }

@@ -129,14 +129,13 @@ Done! The app is ready.
 
 ---
 
-## Update Number of Judges
+## Judge panel size (admin progress bar)
 
-Open `src/constants/criteria.ts` and change:
-```ts
-export const TOTAL_JUDGES = 5; // ← change to your actual count
-```
+**Y** is the number of Firestore `users` rows with `role: "judge"` and **`panelActive` not `false`**. New judge accounts get `panelActive: true`. Deleting someone in **Authentication** does **not** delete their Firestore user row, so the count could stay too high until you use **Admin → Remove from panel** on that person (or set `panelActive: false` / delete the doc in Firestore).
 
-This only affects the progress indicator on the admin panel.
+Your **admin** account should stay `role: "admin"`; it is not counted on the panel.
+
+**Reset** on a team deletes that team’s scores so the **leaderboard** updates immediately.
 
 ---
 
